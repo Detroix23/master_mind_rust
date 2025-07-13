@@ -145,13 +145,17 @@ pub fn main() {
     if MODE_TEST {
         mode_test();
     } else if MODE_PLAYER == ModePlayer::Human {
+        println!("\n## HUMAN PLAY (Engine assist: OFF).");
+        println!("Enter your guesses. Seperated by ','. Ex: `1, 2, 3, 4`.");
         game_manual(set_hidden);
     } else if MODE_PLAYER == ModePlayer::Robot {
+        println!("\n## ENGINE PLAY (Autoplay: ON).");
         game_robot(set_hidden);
     } else if MODE_PLAYER == ModePlayer::Assist {
+        println!("\n## HUMAN PLAY (Engine assist: ON).");
         game_assist(set_hidden);
     } else {
-        println!("(X) - No mode selected. Exitting.");
+        println!("(X) - No mode selected. Exiting.");
     }
 
 }

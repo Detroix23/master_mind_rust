@@ -10,7 +10,7 @@ use crate::search_v1::{all_set_entropy, combinations_hints, combinations_sets, c
 /// Execute the game where the human player tries to guess.
 pub fn game_manual(set_hidden: Vec<u32>) -> bool {
     // User game.
-    println!("\n## Enter your guesses. Seperated by ','. Ex: `1, 2, 3, 4`.");
+    
 
     let mut guesses: u32 = 1;
     let mut found: bool = false;
@@ -80,12 +80,12 @@ pub fn game_manual(set_hidden: Vec<u32>) -> bool {
 /// Execute the game where the human player tries to guess but helped by the engine.
 pub fn game_assist(set_hidden: Vec<u32>) -> bool {
     // User game.
-    println!("\n## Enter your guesses. The engine will compute the best guesses.");
+    
     // Settings
     let mut guesses: u32 = 1;
     let mut found: bool = false;
     let mut cheat_jojo: bool = false;
-    let mut bug: bool = false;
+    let mut _bug: bool = false;
 
     // Settings - Bot
     let mut hint_history: HashMap<Vec<u32>, Hint> = HashMap::new();

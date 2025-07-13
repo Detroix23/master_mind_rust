@@ -250,17 +250,16 @@ pub fn max_entropy(entropy_map: HashMap<Vec<u32>, f64>) -> (Vec<Vec<u32>>, f64) 
 /// # Bot main body.
 /// This function runs the main loop of the "auto-search". Returns 0 if the bot didn't manage to find, else the number of guesses it took.
 pub fn game_robot(set_hidden: Vec<u32>) -> u32 {
-	println!("\n## Robot automated game. Set UI_SHOW to change what you see.");
 	
 	// Loop until found or run out of guesses.
 	let mut guess_count: u32 = 1;
 	let mut found: bool = false;
-	let mut bug: bool = false;
+	let mut _bug: bool = false;
 	let mut hint_history: HashMap<Vec<u32>, Hint> = HashMap::new();
 	let mut set_combinations: Vec<Vec<u32>> = combinations_sets();
 	let hint_combinations: Vec<Hint> = combinations_hints();
 
-	while guess_count <= MAX_TRIES && !found && !bug {
+	while guess_count <= MAX_TRIES && !found && !_bug {
 		if UI_SHOW == UiLevel::All {println!("Guess {}.", guess_count);}
 		let t1: Instant = Instant::now();
 		// Calculate entropy of each possible given combination.
@@ -272,7 +271,7 @@ pub fn game_robot(set_hidden: Vec<u32>) -> u32 {
 		if set_combinations_entropy_max.0.len() > 0 {
 			set_choosen = set_combinations_entropy_max.0[0].clone();
 		} else {
-			bug = true;
+			_bug = true;
 			panic!("(X) - Error, empty combination vector.");
 		}
 		// Guess and save the hint and set in history.
@@ -299,7 +298,7 @@ pub fn game_robot(set_hidden: Vec<u32>) -> u32 {
 	if found {
 		guess_count -= 1;
 		if UI_SHOW == UiLevel::All {println!("Victory ! in {} guesses.", guess_count);}
-	} else if bug {
+	} else if _bug {
 		if UI_SHOW == UiLevel::All {println!("(!) - Something wrong happend; no more info.");}
 	} else {
 		if UI_SHOW == UiLevel::All {println!("Loose ! after {} guesses.", guess_count);}

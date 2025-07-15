@@ -6,7 +6,7 @@
 
 
 // Import from Main.
-use crate::{Duration, HashMap, Instant, UiLevel, DEBUG_LOG_TIME, MAX_TRIES, POOL_SIZE, SET_LENGTH, UI_HINTS, UI_SHOW};
+use crate::{Duration, HashMap, Instant, UiLevel, DEBUG_LOG_TIME, UI_HINTS, UI_SHOW};
 // Import from Checks.
 use crate::{checks::{similarities, Hint}};
 
@@ -18,17 +18,17 @@ pub struct SetScore {
 
 /// Generate all possible combinations of set, according to main constant's.
 /// q(combinations) = pool_size ^ set_length.
-pub fn combinations_sets() -> Vec<Vec<u32>> {
-	fn combinations_sets_inner(mut iter_global: usize) -> Vec<Vec<u32>> {
+pub fn combinations_sets(set_length: usize, pool_size: u32) -> Vec<Vec<u32>> {
+	fn combinations_sets_inner(mut iter_global: usize, set_length: usize, pool_size: u32) -> Vec<Vec<u32>> {
 		let mut combinations_send: Vec<Vec<u32>> = Vec::new();
 
-		if iter_global < SET_LENGTH {
+		if iter_global < set_length {
 			iter_global += 1;
-			let combinations_received: Vec<Vec<u32>> = combinations_sets_inner(iter_global);
+			let combinations_received: Vec<Vec<u32>> = combinations_sets_inner(iter_global, set_length, pool_size);
 			// println!("\n====================Iter {iter_global} - NORMAL MODE=======================");
 			
 			for combination in combinations_received {
-				for iter_local in 1..=POOL_SIZE {
+				for iter_local in 1..=pool_size {
 					let mut combination_temp: Vec<u32> = combination.to_vec();
 					combination_temp.push(iter_local);
 					combinations_send.push(combination_temp);
@@ -36,7 +36,7 @@ pub fn combinations_sets() -> Vec<Vec<u32>> {
 			}
 		} else {
 			// println!("\n====================Iter {iter_global} - INIT MOD=========================");
-			for iter_local in 1..=POOL_SIZE {
+			for iter_local in 1..=pool_size {
 				let combination: Vec<u32> = vec![iter_local];
 				combinations_send.push(combination);
 			}
@@ -47,21 +47,21 @@ pub fn combinations_sets() -> Vec<Vec<u32>> {
 		combinations_send
 	}
 
-	let combinations: Vec<Vec<u32>> = combinations_sets_inner(1);
+	let combinations: Vec<Vec<u32>> = combinations_sets_inner(1, set_length, pool_size);
 
 	combinations
 }
 
 /// Generate all possible combinations of hints given, *Exact* (2), *Exist* (1), *Non-exist* (0).
 /// q(combinations) = 3 ^ set_length.
-pub fn combinations_hints() -> Vec<Hint> {
+pub fn combinations_hints(set_length: usize) -> Vec<Hint> {
 	// Generate all combinations
-	fn combinations_sets_inner(mut iter_global: usize) -> Vec<Vec<u32>> {
+	fn combinations_sets_inner(mut iter_global: usize, set_length: usize) -> Vec<Vec<u32>> {
 		let mut combinations_send: Vec<Vec<u32>> = Vec::new();
 
-		if iter_global < SET_LENGTH {
+		if iter_global < set_length {
 			iter_global += 1;
-			let combinations_received: Vec<Vec<u32>> = combinations_sets_inner(iter_global);
+			let combinations_received: Vec<Vec<u32>> = combinations_sets_inner(iter_global, set_length);
 			//println!("\n====================Iter {iter_global} - NORMAL MODE=======================");
 			
 			for combination in combinations_received {
@@ -83,7 +83,7 @@ pub fn combinations_hints() -> Vec<Hint> {
 
 		combinations_send
 	}
-	let combinations: Vec<Vec<u32>> = combinations_sets_inner(1);
+	let combinations: Vec<Vec<u32>> = combinations_sets_inner(1, set_length);
 
 	// Convert to Hint struct
 	let mut combinations_hints: Vec<Hint> = Vec::new();
@@ -161,7 +161,7 @@ pub fn set_hint_score(hint_quantities: HashMap<Hint, u32>) -> HashMap<Hint, SetS
 	// Proba.
 	for (hint, quantity) in hint_quantities {
 		let probability: f64 = quantity as f64 / total_sum as f64;
-		let mut bits: f64 = 0.0_f64;
+		let bits: f64;
 		if probability != 0.0_f64 {
 			bits = -probability.log2();
 		} else {
@@ -249,21 +249,22 @@ pub fn max_entropy(entropy_map: HashMap<Vec<u32>, f64>) -> (Vec<Vec<u32>>, f64) 
 
 /// # Bot main body.
 /// This function runs the main loop of the "auto-search". Returns 0 if the bot didn't manage to find, else the number of guesses it took.
-pub fn game_robot(set_hidden: Vec<u32>) -> u32 {
+pub fn game_robot(set_hidden: Vec<u32>, set_length: usize, pool_size: u32, max_tries: u32) -> u32 {
 	
 	// Loop until found or run out of guesses.
 	let mut guess_count: u32 = 1;
 	let mut found: bool = false;
 	let mut _bug: bool = false;
 	let mut hint_history: HashMap<Vec<u32>, Hint> = HashMap::new();
-	let mut set_combinations: Vec<Vec<u32>> = combinations_sets();
-	let hint_combinations: Vec<Hint> = combinations_hints();
+	let mut set_combinations: Vec<Vec<u32>> = combinations_sets(set_length, pool_size);
+	let hint_combinations: Vec<Hint> = combinations_hints(set_length);
 
-	while guess_count <= MAX_TRIES && !found && !_bug {
+	while guess_count <= max_tries && !found && !_bug {
 		if UI_SHOW == UiLevel::All {println!("Guess {}.", guess_count);}
 		let t1: Instant = Instant::now();
+		let combinations_len: f32 = set_combinations.len() as f32;
 		// Calculate entropy of each possible given combination.
-		if UI_SHOW == UiLevel::All {println!("- Entropy calculation on {} sets.", {set_combinations.len()});}
+		if UI_SHOW == UiLevel::All {println!("- Entropy calculation on {} sets.", {combinations_len});}
 		let set_combinations_entropy: HashMap<Vec<u32>, f64> = all_set_entropy(&set_combinations, &hint_combinations);
 		// Choose the best one, first if ex-aqueo.
 		let set_combinations_entropy_max: (Vec<Vec<u32>>, f64) = max_entropy(set_combinations_entropy.clone());
@@ -285,8 +286,10 @@ pub fn game_robot(set_hidden: Vec<u32>) -> u32 {
 		
 
 		// Create and filter the vector of possible combinations with history.
-		if UI_SHOW == UiLevel::All {println!("- Refining combinations.");}
 		set_combinations = combinations_sets_matching(&hint_history, &set_combinations);
+		let combination_len_new: f32 = set_combinations.len() as f32;
+		if UI_SHOW == UiLevel::All {println!("- Refinined combinations: {:.2}%.", ((combination_len_new - combinations_len) / combinations_len * 100_f32));}
+		
 
 		// Count elapsed time
 		let d1: Duration  = t1.elapsed();

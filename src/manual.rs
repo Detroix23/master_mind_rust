@@ -3,19 +3,19 @@
 
 use std::time::Duration;
 
-use crate::{HashMap, Instant, UiLevel, DEBUG_ACTIVATED, DEBUG_LOG_TIME, MAX_TRIES, SET_LENGTH, UI_HINTS, UI_SHOW};
+use crate::{HashMap, Instant, UiLevel, DEBUG_ACTIVATED, DEBUG_LOG_TIME, UI_HINTS, UI_SHOW};
 use crate::checks::{convert_input_set, similarities, Hint};
 use crate::search_v1::{all_set_entropy, combinations_hints, combinations_sets, combinations_sets_matching, max_entropy, set_entropy};
 
 /// Execute the game where the human player tries to guess.
-pub fn game_manual(set_hidden: Vec<u32>) -> bool {
+pub fn game_manual(set_hidden: Vec<u32>, set_length: usize, _pool_size: u32, max_tries: u32) -> bool {
     // User game.
     
 
     let mut guesses: u32 = 1;
     let mut found: bool = false;
 
-    while guesses <= MAX_TRIES && !found {
+    while guesses <= max_tries && !found {
         // User input.
         let mut user_guess_correct: bool = false;
         let mut user_guess_set_string: String = String::new();
@@ -35,7 +35,7 @@ pub fn game_manual(set_hidden: Vec<u32>) -> bool {
             
             
             // Validate input
-            if user_guess_set.len() == SET_LENGTH {
+            if user_guess_set.len() == set_length {
                 user_guess_correct = true;
             } else if DEBUG_ACTIVATED && (user_guess_set_string == String::from("jojo")) {
                 // Cheat - Instant win.
@@ -48,7 +48,7 @@ pub fn game_manual(set_hidden: Vec<u32>) -> bool {
                 user_guess_set = set_hidden.clone();
                 user_guess_correct = true;
             } else {
-                println!("(!) Warning - Invalid input; Input difference: {}", SET_LENGTH as i32 - user_guess_set.len() as i32);
+                println!("(!) Warning - Invalid input; Input difference: {}", set_length as i32 - user_guess_set.len() as i32);
                 user_guess_set_string = String::new();
             }
         }
@@ -61,7 +61,7 @@ pub fn game_manual(set_hidden: Vec<u32>) -> bool {
         println!("- Found hint: {}{} {}{} {}{}", comparison_results.exact, UI_HINTS.exact, comparison_results.exist, UI_HINTS.exist, comparison_results.null, UI_HINTS.null);
 
         // End turn.
-        found = (comparison_results.exact as usize == SET_LENGTH) | cheat_jojo;
+        found = (comparison_results.exact as usize == set_length) | cheat_jojo;
 
         guesses += 1;
     } 
@@ -78,7 +78,7 @@ pub fn game_manual(set_hidden: Vec<u32>) -> bool {
 }
 
 /// Execute the game where the human player tries to guess but helped by the engine.
-pub fn game_assist(set_hidden: Vec<u32>) -> bool {
+pub fn game_assist(set_hidden: Vec<u32>, set_length: usize, pool_size: u32, max_tries: u32) -> bool {
     // User game.
     
     // Settings
@@ -89,10 +89,10 @@ pub fn game_assist(set_hidden: Vec<u32>) -> bool {
 
     // Settings - Bot
     let mut hint_history: HashMap<Vec<u32>, Hint> = HashMap::new();
-    let mut set_combinations: Vec<Vec<u32>> = combinations_sets();
-    let hint_combinations: Vec<Hint> = combinations_hints();
+    let mut set_combinations: Vec<Vec<u32>> = combinations_sets(set_length, pool_size);
+    let hint_combinations: Vec<Hint> = combinations_hints(set_length);
 
-    while guesses <= MAX_TRIES && !found {
+    while guesses <= max_tries && !found {
         let mut user_guess_correct: bool = false;
         let mut user_guess_set_string: String = String::new();
         let mut user_guess_set: Vec<u32> = Vec::new();
@@ -123,7 +123,7 @@ pub fn game_assist(set_hidden: Vec<u32>) -> bool {
             
             
             // Validate input
-            if user_guess_set.len() == SET_LENGTH {
+            if user_guess_set.len() == set_length {
                 user_guess_correct = true;
             } else if DEBUG_ACTIVATED && (user_guess_set_string == String::from("jojo")) {
                 // Cheat - Instant win.
@@ -136,7 +136,7 @@ pub fn game_assist(set_hidden: Vec<u32>) -> bool {
                 user_guess_set = set_hidden.clone();
                 user_guess_correct = true;
             } else {
-                println!("(!) Warning - Invalid input; Input difference: {}", SET_LENGTH as i32 - user_guess_set.len() as i32);
+                println!("(!) Warning - Invalid input; Input difference: {}", set_length as i32 - user_guess_set.len() as i32);
                 user_guess_set_string = String::new();
             }
         }
@@ -161,7 +161,7 @@ pub fn game_assist(set_hidden: Vec<u32>) -> bool {
         if DEBUG_LOG_TIME {println!("- Time elapsed waiting human: t = {:.2?}", d);}
 
         // End turn.
-        found = (comparison_results.exact as usize == SET_LENGTH) | cheat_jojo;
+        found = (comparison_results.exact as usize == set_length) | cheat_jojo;
 
         guesses += 1;
     } 

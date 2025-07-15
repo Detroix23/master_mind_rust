@@ -53,9 +53,9 @@ pub struct UiHints<'a> {
 }
 /// Graphical - What to print for hint types.
 pub const UI_HINTS: UiHints = UiHints {
-    exact: "⚪",
-    exist: "🔴",
-    null: "⚫",
+    exact: "██",
+    exist: "▒▒",
+    null:  "┈┈",
 };
 
 /// Graphical - Define kinds of info to show.
@@ -214,14 +214,14 @@ pub fn main() {
             print!(", {value}");
         }
         println!();
-        } else {
-        println!("- Pool of values (inclusive): 1 .. {}", user_pool_size);
+    } else {
+        println!("- Pool of values (inclusive): 1 .. {}.", user_pool_size);
     }
-    println!("- Set length: {}", user_set_length);
-    println!("- Maximum tries: {}", user_max_tries);
-    println!("- Game player: {:#?}", user_game_player);
-    println!("- Ui level: {:#?}", UI_SHOW);
-
+    println!("- Set length: {}.", user_set_length);
+    println!("- Maximum tries: {}.", user_max_tries);
+    println!("- Game player: {:#?}.", user_game_player);
+    println!("- Ui level: {:#?}.", UI_SHOW);
+    println!("- Ui for hint: {} = `exact`, {} = `exists`, {} = `null`.", UI_HINTS.exact, UI_HINTS.exist, UI_HINTS.null);
 
     // Generating hidden set
     let set_hidden: Vec<u32> = generate_random_set(user_set_length, user_pool_size);

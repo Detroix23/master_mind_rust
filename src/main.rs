@@ -6,6 +6,7 @@
 // Import
 use rand::Rng;
 use std::collections::HashMap;
+use std::io::Read;
 use std::time::Instant;
 use std::time::Duration;
 
@@ -243,9 +244,13 @@ pub fn main() {
         println!("\n## HUMAN PLAY (Engine assist: ON).");
         game_assist(set_hidden, user_set_length,  user_pool_size, user_max_tries);
     } else if user_game_player == ModePlayer::RobotBenchmark {
-        println!("(!) - Robot Benchmark is Work-In-Progress. Exiting.")
+        println!("(!) - Robot Benchmark is Work-In-Progress. ")
     } else {
-        println!("(X) - No valid mode selected. Exiting.");
+        println!("(X) - No valid mode selected. ");
     }
 
+    println!("Press enter to exit...");
+    std::io::stdin()
+        .read_line(&mut String::new())
+        .expect("(X) - Can't read line. Exiting anyways.");
 }
